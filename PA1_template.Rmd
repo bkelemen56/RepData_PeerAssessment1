@@ -5,21 +5,233 @@ output:
     keep_md: true
 ---
 
+This assignment makes use of data from a personal activity monitoring
+device. This device collects data at 5 minute intervals through out the
+day. The data consists of two months of data from an anonymous
+individual collected during the months of October and November, 2012
+and include the number of steps taken in 5 minute intervals each day.
+
+Set global R markdown options (echo = TRUE)
+```{r setoptions, echo=TRUE}
+library(knitr)
+opts_chunk$set(echo = TRUE)
+```
+
+Libraries used by this report:
+```{r}
+library(plyr)
+library(ggplot2)
+library(xtable)
+```
 
 ## Loading and preprocessing the data
 
+The **Activity monitoring data** data is downloaded from this 
+[git repository](https://github.com/bkelemen56/RepData_PeerAssessment1/blob/master/activity.zip?raw=true) or from the 
+[course web site](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip) [52K]
 
+The variables included in this dataset are:
+
+* **steps**: Number of steps taking in a 5-minute interval (missing
+    values are coded as `NA`)
+
+* **date**: The date on which the measurement was taken in YYYY-MM-DD
+    format
+
+* **interval**: Identifier for the 5-minute interval in which
+    measurement was taken
+
+The dataset is stored in a comma-separated-value (CSV) file and there
+are a total of 17,568 observations in this
+dataset.
+
+To load the dataset into R we use this code:
+
+```{r}
+if(!file.exists("./data")) {
+  dir.create("./data")
+}
+if(!file.exists("./data/activity.zip")) {
+  setInternet2(use = TRUE)
+  download.file("https://github.com/bkelemen56/RepData_PeerAssessment1/blob/master/activity.zip?raw=true", 
+                "data/activity.zip", mode = "wb")
+}
+data1 <- read.table(unz("data/activity.zip", "activity.csv"), header=T, sep=",")
+
+# print the head of the dataset
+head(data1)
+```
 
 ## What is mean total number of steps taken per day?
 
+For this part of the assignment, we ignore the missing values in
+the dataset.
 
+We transform the raw data to easily answer the questions below:
+
+```{r}
+p11data <- ddply(data1, c("date"), summarize, 
+                 totalSteps = sum(steps, na.rm = TRUE),
+                 meanSteps = mean(steps, na.rm = TRUE),
+                 medianSteps = median(steps, na.rm = TRUE))
+p11data$src <- "Original Steps"
+```
+
+### 1. Make a histogram of the total number of steps taken each day
+
+```{r, fig.width=10}
+g <- ggplot(p11data, aes(x = date, y = totalSteps))
+g <- g + geom_bar(stat = "identity", color = "black", fill = "gray")
+g <- g + labs(title = "Total of steps per day", x = "Date", y = "Total steps")
+g <- g + theme(axis.text.x = element_text(angle = 45, size = 8, hjust = 1))
+g
+```
+
+### 2. Calculate and report the **mean** and **median** total number of steps taken per day
+
+```{r, results='asis'}
+# calculate the data (NA's in the result are replaced with zero)
+p12data <- p11data
+p12data$meanSteps[is.na(p12data$meanSteps)] <- 0
+p12data$medianSteps[is.na(p12data$medianSteps)] <- 0
+
+# print results
+xt1 <- xtable(p12data[, c("date", "meanSteps", "medianSteps")], digits = 2)
+print(xt1, type = "html", include.rownames = FALSE)
+```
 
 ## What is the average daily activity pattern?
 
+### 1. Make a time series plot (i.e. `type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
+```{r, fig.width=10}
+# calculate the time series
+p13data <- ddply(data1, c("interval"), summarize, meanSteps = mean(steps, na.rm = TRUE))
+
+# plot the time series
+g <- ggplot(p13data, aes(x = interval, y = meanSteps))
+g <- g + geom_line(stat = "identity")
+g <- g + labs(title = "Mean steps per interval averaged over all days", x = "Interval", y = "Mean steps")
+g
+```
+
+### 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```{r}
+i <- which.max(p13data$meanSteps)
+print(paste("The 5-min interval", p13data$interval[i], "has the maximum average accross all days"))
+```
 
 ## Imputing missing values
 
+### 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with `NA`s)
 
+```{r}
+# number of rows with NA steps
+paste("The number of NA's in the dataset is", sum(is.na(data1$steps)))
+```
+
+### 2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+The strategy will be to fill the missing values with the mean of steps over the
+interval over all days.
+
+```{r}
+# calculate a new dataframe with imputedSteps
+p14data <- merge(data1, p13data, by = "interval")
+p14data$imputedSteps <- ifelse(is.na(p14data$steps), p14data$meanSteps, p14data$steps)
+
+# print the head of this new dataframe
+head(p14data)
+```
+
+### 3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+```{r}
+# construct the new dataset with the same structure as data1 but with imputed steps
+attach(p14data)
+data2 <- p14data[order(date, interval), c("imputedSteps", "date", "interval")]
+rownames(data2) <-  NULL
+names(data2)[names(data2) == "imputedSteps"] <- "steps"
+detach(p14data)
+
+# print part of the new dataset
+head(data2)
+```
+
+### 4. Make a histogram of the total number of steps taken each day and Calculate and report the **mean** and **median** total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+```{r}
+p21data <- ddply(data2, c("date"), summarize, 
+                 totalSteps = sum(steps, na.rm = TRUE),
+                 meanSteps = mean(steps, na.rm = TRUE),
+                 medianSteps = median(steps, na.rm = TRUE))
+p21data$src <- "Imputed Steps"
+```
+
+#### a. Compare the total number of steps taken each day in both datasets via a histogram:
+
+The total imputed steps per day are higher for those days with NA steps as these values were repalced by the mean steps of that interval. See the differences in the following plot.
+
+```{r, fig.width=10}
+# combine p11data and p21data for comparison
+px1data <- rbind(p11data, p21data)
+
+# make the comparison plot
+g <- ggplot(px1data, aes(x = date, y = totalSteps, fill = src))
+g <- g + geom_bar(stat = "identity", position = "dodge")
+g <- g + labs(title = "Total of steps per day (original and imputed steps)", x = "Date", y = "Total steps")
+g <- g + theme(axis.text.x = element_text(angle = 45, size = 6, hjust = 1))
+g
+```
+
+#### b. Calculate and report the **mean** and **median** total number of steps taken per day
+
+The mean and median calculations are different in the new dataset as the NA's were replaced by the mean steps of the interval. See the "diffXXXX" variables in the following table for the difference between calculations on the original data and the calculatons on the imputed data.
+
+
+```{r, results='asis'}
+# calculate the data (NA's in the result are changed to zero)
+p22data <- p21data
+
+p22data$meanSteps[is.na(p22data$meanSteps)] <- 0
+p22data$medianSteps[is.na(p22data$medianSteps)] <- 0
+
+names(p22data)[names(p22data) == "meanSteps"] <- "meanImputedSteps"
+names(p22data)[names(p22data) == "medianSteps"] <- "medianImputedSteps"
+
+# merge the original processed data with the imputed steps data 
+px2data <- merge(p12data, p22data, by = "date")
+px2data$diffMeanSteps <- px2data$meanSteps - px2data$meanImputedSteps
+px2data$diffMedianSteps <- px2data$medianSteps - px2data$medianImputedSteps
+
+# print results
+xt2 <- xtable(px2data[, c("date", "meanSteps", "meanImputedSteps", "diffMeanSteps",  
+                          "medianSteps", "medianImputedSteps", "diffMedianSteps")],
+              digits = 2)
+print(xt2, type = "html", include.rownames = FALSE)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+Yes. On weekdays the activity starts earlier than on weekends (5:30 AM vs 8:00 AM), and on weekends the activity remains higher after 10:00 PM than on weekdays.
+
+
+```{r, fig.width=10}
+# mark weekdays and weekend observations
+isWeekend <- function(x) { 
+  day <- weekdays(as.Date(x))
+  day == "Saturday" | day == "Sunday"
+}
+data2$dayType <- ifelse(isWeekend(data2$date), "weekend", "weekday")
+
+p23data <- ddply(data2, c("interval", "dayType"), summarize, meanSteps = mean(steps, na.rm = TRUE))
+
+# plot the time series
+g <- ggplot(p23data, aes(x = interval, y = meanSteps))
+g <- g + facet_grid(dayType~.)
+g <- g + geom_line(stat = "identity")
+g <- g + labs(title = "Mean steps per interval averaged over all days", x = "Interval", y = "Mean steps")
+g
+
+```
