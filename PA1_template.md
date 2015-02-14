@@ -54,15 +54,6 @@ if(!file.exists("./data/activity.zip")) {
   download.file("https://github.com/bkelemen56/RepData_PeerAssessment1/blob/master/activity.zip?raw=true", 
                 "data/activity.zip", mode = "wb")
 }
-```
-
-```
-## Warning in
-## download.file("https://github.com/bkelemen56/RepData_PeerAssessment1/blob/master/activity.zip?raw=true",
-## : downloaded length 53559 != reported length 53559
-```
-
-```r
 data1 <- read.table(unz("data/activity.zip", "activity.csv"), header=T, sep=",")
 
 # print the head of the dataset
@@ -123,7 +114,7 @@ print(xt1, type = "html", include.rownames = FALSE)
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Sat Feb 14 18:31:40 2015 -->
+<!-- Sat Feb 14 18:50:57 2015 -->
 <table border=1>
 <tr> <th> date </th> <th> meanSteps </th> <th> medianSteps </th>  </tr>
   <tr> <td> 2012-10-01 </td> <td align="right"> 0.00 </td> <td align="right"> 0.00 </td> </tr>
@@ -285,21 +276,19 @@ head(data2)
 
 ### 4. Make a histogram of the total number of steps taken each day and Calculate and report the **mean** and **median** total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
-
-```r
-p21data <- ddply(data2, c("date"), summarize, 
-                 totalSteps = sum(steps, na.rm = TRUE),
-                 meanSteps = mean(steps, na.rm = TRUE),
-                 medianSteps = median(steps, na.rm = TRUE))
-p21data$src <- "Imputed Steps"
-```
-
 #### a. Compare the total number of steps taken each day in both datasets via a histogram:
 
 The total imputed steps per day are higher for those days with NA steps as these values were repalced by the mean steps of that interval. See the differences in the following plot.
 
 
 ```r
+# calculate totsl, mean and meadian for the imputed steps
+p21data <- ddply(data2, c("date"), summarize, 
+                 totalSteps = sum(steps, na.rm = TRUE),
+                 meanSteps = mean(steps, na.rm = TRUE),
+                 medianSteps = median(steps, na.rm = TRUE))
+p21data$src <- "Imputed Steps"
+
 # combine p11data and p21data for comparison
 px1data <- rbind(p11data, p21data)
 
@@ -311,7 +300,7 @@ g <- g + theme(axis.text.x = element_text(angle = 45, size = 6, hjust = 1))
 g
 ```
 
-![](./PA1_template_files/figure-html/unnamed-chunk-12-1.png) 
+![](./PA1_template_files/figure-html/unnamed-chunk-11-1.png) 
 
 #### b. Calculate and report the **mean** and **median** total number of steps taken per day
 
@@ -342,7 +331,7 @@ print(xt2, type = "html", include.rownames = FALSE)
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Sat Feb 14 18:31:41 2015 -->
+<!-- Sat Feb 14 18:50:58 2015 -->
 <table border=1>
 <tr> <th> date </th> <th> meanSteps </th> <th> meanImputedSteps </th> <th> diffMeanSteps </th> <th> medianSteps </th> <th> medianImputedSteps </th> <th> diffMedianSteps </th>  </tr>
   <tr> <td> 2012-10-01 </td> <td align="right"> 0.00 </td> <td align="right"> 37.38 </td> <td align="right"> -37.38 </td> <td align="right"> 0.00 </td> <td align="right"> 34.11 </td> <td align="right"> -34.11 </td> </tr>
@@ -432,4 +421,4 @@ g <- g + labs(title = "Mean steps per interval averaged over all days", x = "Int
 g
 ```
 
-![](./PA1_template_files/figure-html/unnamed-chunk-14-1.png) 
+![](./PA1_template_files/figure-html/unnamed-chunk-13-1.png) 

@@ -81,11 +81,8 @@ if(!file.exists(&quot;./data/activity.zip&quot;)) {
   setInternet2(use = TRUE)
   download.file(&quot;https://github.com/bkelemen56/RepData_PeerAssessment1/blob/master/activity.zip?raw=true&quot;, 
                 &quot;data/activity.zip&quot;, mode = &quot;wb&quot;)
-}</code></pre>
-<pre><code>## Warning in
-## download.file(&quot;https://github.com/bkelemen56/RepData_PeerAssessment1/blob/master/activity.zip?raw=true&quot;,
-## : downloaded length 53559 != reported length 53559</code></pre>
-<pre class="r"><code>data1 &lt;- read.table(unz(&quot;data/activity.zip&quot;, &quot;activity.csv&quot;), header=T, sep=&quot;,&quot;)
+}
+data1 &lt;- read.table(unz(&quot;data/activity.zip&quot;, &quot;activity.csv&quot;), header=T, sep=&quot;,&quot;)
 
 # print the head of the dataset
 head(data1)</code></pre>
@@ -126,7 +123,7 @@ p12data$medianSteps[is.na(p12data$medianSteps)] &lt;- 0
 xt1 &lt;- xtable(p12data[, c(&quot;date&quot;, &quot;meanSteps&quot;, &quot;medianSteps&quot;)], digits = 2)
 print(xt1, type = &quot;html&quot;, include.rownames = FALSE)</code></pre>
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Sat Feb 14 18:31:40 2015 -->
+<!-- Sat Feb 14 18:50:57 2015 -->
 <table border="1">
 <tr> <th> 
 date
@@ -633,15 +630,17 @@ head(data2)</code></pre>
 </div>
 <div id="make-a-histogram-of-the-total-number-of-steps-taken-each-day-and-calculate-and-report-the-mean-and-median-total-number-of-steps-taken-per-day.-do-these-values-differ-from-the-estimates-from-the-first-part-of-the-assignment-what-is-the-impact-of-imputing-missing-data-on-the-estimates-of-the-total-daily-number-of-steps" class="section level3">
 <h3>4. Make a histogram of the total number of steps taken each day and Calculate and report the <strong>mean</strong> and <strong>median</strong> total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?</h3>
-<pre class="r"><code>p21data &lt;- ddply(data2, c(&quot;date&quot;), summarize, 
-                 totalSteps = sum(steps, na.rm = TRUE),
-                 meanSteps = mean(steps, na.rm = TRUE),
-                 medianSteps = median(steps, na.rm = TRUE))
-p21data$src &lt;- &quot;Imputed Steps&quot;</code></pre>
 <div id="a.-compare-the-total-number-of-steps-taken-each-day-in-both-datasets-via-a-histogram" class="section level4">
 <h4>a. Compare the total number of steps taken each day in both datasets via a histogram:</h4>
 <p>The total imputed steps per day are higher for those days with NA steps as these values were repalced by the mean steps of that interval. See the differences in the following plot.</p>
-<pre class="r"><code># combine p11data and p21data for comparison
+<pre class="r"><code># calculate totsl, mean and meadian for the imputed steps
+p21data &lt;- ddply(data2, c(&quot;date&quot;), summarize, 
+                 totalSteps = sum(steps, na.rm = TRUE),
+                 meanSteps = mean(steps, na.rm = TRUE),
+                 medianSteps = median(steps, na.rm = TRUE))
+p21data$src &lt;- &quot;Imputed Steps&quot;
+
+# combine p11data and p21data for comparison
 px1data &lt;- rbind(p11data, p21data)
 
 # make the comparison plot
@@ -675,7 +674,7 @@ xt2 &lt;- xtable(px2data[, c(&quot;date&quot;, &quot;meanSteps&quot;, &quot;mean
               digits = 2)
 print(xt2, type = &quot;html&quot;, include.rownames = FALSE)</code></pre>
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Sat Feb 14 18:31:41 2015 -->
+<!-- Sat Feb 14 18:50:58 2015 -->
 <table border="1">
 <tr> <th> 
 date
